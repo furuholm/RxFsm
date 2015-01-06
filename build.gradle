@@ -1,0 +1,16 @@
+
+apply plugin: 'java'
+
+version = '0.1'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	compile 'io.reactivex:rxjava:1.0.0'
+}
+
+dependencies {
+    testCompile 'junit:junit-dep:4.10'
+}
