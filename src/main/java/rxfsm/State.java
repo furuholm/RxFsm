@@ -9,52 +9,19 @@ import rxfsm.Transition;
 
 public class State {
 
-	private Action0 onEnter; // TODO: make final once a factory is used to create states
-	private Action0 onExit; // TODO: make final once a factory is used to create states
-	private final List<Transition> transitions;
+	private final Action0 onEnter;
+	private final Action0 onExit;
+    private final List<State> subStates;
+    private final State initialSubState;
 
-	public State() {
-		this.onEnter = null;
-		this.onExit = null;
-		this.transitions = new ArrayList<Transition>();
-	}
-
-    private State(Action0 onEnter, Action0 onExit, List<Transition> transitions) {
+    State(Action0 onEnter, Action0 onExit, List<State> subStates, State initialSubState) {
+        if (initialSubState == null && subStates.size() > 0) {
+            throw new IllegalStateException("If there are any sub states, one of them has to be the initial sub state");
+        }
         this.onEnter = onEnter;
         this.onExit = onExit;
-        this.transitions = transitions;
-    }
-
-    public State withOnEnter(Action0 action) {
-        if (onEnter == null)
-        {
-            return new State(action, onExit, transitions);
-        }
-        else
-        {
-            throw new IllegalStateException("There can only be one onEnter function");
-        }
-    }
-
-    public State withOnExit(Action0 action) {
-        if (onExit == null)
-        {
-            return new State(onEnter, action, transitions);
-        }
-        else
-        {
-            throw new IllegalStateException("There can only be one onExit function");
-        }
-    }
-
-	//TODO: remove once a factory is used to create states
-	public void setOnEnter(Action0 action) {
-		this.onEnter = action;
-	}
-
-    //TODO: remove once a factory is used to create states
-    public void setOnExit(Action0 action) {
-        this.onExit = action;
+        this.subStates = subStates;
+        this.initialSubState = initialSubState;
     }
 
 	public void enter()
@@ -73,11 +40,11 @@ public class State {
 		}
 	}
 
-	void addTransition(Transition t) {
-		transitions.add(t);
-	}
+    public List<State> getSubStates() {
+        return subStates;
+    }
 
-	List<Transition> transitions() {
-		return transitions;
-	}
+    public State getInitialSubState() {
+        return initialSubState;
+    }
 }

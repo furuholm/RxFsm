@@ -2,6 +2,7 @@ package rxfsm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 
@@ -15,8 +16,10 @@ public class Fsm {
 	private State currentState;
 	private final CompositeSubscription transitionsSubscriptions;
 	private final HashMap<State, List<Transition>> transitions;
+    private final Map<State, List<State>> stateAncestorMap;
+    private final List<State> topStates;
 
-	public Fsm(State initialState, List<Transition> transitions) {
+	public Fsm(State initialState, List<Transition> transitions, List<State> topStates, Map<State, List<State>> stateAncestorMap) {
 		this.initialState = initialState;
 
 		this.transitions = new HashMap<State, List<Transition>>();
@@ -35,6 +38,11 @@ public class Fsm {
 
 		this.currentState = null;
 		this.transitionsSubscriptions = new CompositeSubscription();
+        this.topStates = topStates;
+        if (topStates == null || topStates.isEmpty()) {
+            throw new IllegalArgumentException("Top states needs to be provided");
+        }
+        this.stateAncestorMap = stateAncestorMap;
 	}
 
 	public void activate() {
@@ -42,26 +50,55 @@ public class Fsm {
 	}
 
     private void switchState(State newState) {
+        TransitionPath path =
+                TransitionPathCalculator.calculateTransitionPath(
+                        stateAncestorMap.get(currentState),
+                        stateAncestorMap.get(newState));
+
         deactivateTransitions();
         exit(currentState);
+        exitStates(path.getStatesToExit());
+        enterStates(path.getStatesToEnter());
         enter(newState);
     }
 
 	private void enter(State state) {
-		currentState = state;
-		currentState.enter();
-		activateTransitions();
+		state.enter();
+
+        State initialSubState = state.getInitialSubState();
+        if (initialSubState != null)
+        {
+            enter(initialSubState);
+        }
+        else
+        {
+            // The base case
+            currentState = state;
+            activateTransitions();
+        }
+
 	}
 
     private void exit(State state) {
         state.exit();
     }
 
+    private void exitStates(List<State> statesToExit) {
+        for (State s : statesToExit) {
+            s.exit();
+        }
+    }
+
+    private void enterStates(List<State> statesToEnter) {
+        for (State s: statesToEnter) {
+            s.enter();
+        }
+    }
+
     private void activateTransitions() {
 		List<Transition> toActivate = transitions.get(currentState);
 
-                System.out.println("activating");
-		if (!toActivate.isEmpty()) {
+		if (toActivate != null && !toActivate.isEmpty()) {
 			List<Observable<State>> observables
 				= toActivate
 					.stream()
