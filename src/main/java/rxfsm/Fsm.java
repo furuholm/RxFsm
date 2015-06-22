@@ -22,7 +22,7 @@ public class Fsm {
     private final Map<State, List<State>> stateAncestorMap;
     private final List<State> topStates;
 
-	public Fsm(State initialState, List<Transition> transitions, List<State> topStates, Map<State, List<State>> stateAncestorMap) {
+	public Fsm(State initialState, List<Transition> transitions, List<State> topStates) {
 		this.initialState = initialState;
 
 		this.transitions = new HashMap<State, List<Transition>>();
@@ -45,7 +45,7 @@ public class Fsm {
         if (topStates == null || topStates.isEmpty()) {
             throw new IllegalArgumentException("Top states needs to be provided");
         }
-        this.stateAncestorMap = stateAncestorMap;
+        this.stateAncestorMap = generateStateAncestorMap(topStates);;
 	}
 
 	public void activate() {
@@ -140,5 +140,30 @@ public class Fsm {
 
     private void deactivateTransitions() {
         transitionsSubscriptions.clear();
+    }
+
+    // Generates a map where each state in the FSM is mapped against a list of its ancestors
+    private static Map<State, List<State>> generateStateAncestorMap(List<State> topStates) {
+        Map<State, List<State>> stateAncestorMap = new HashMap<State, List<State>>();
+        for (State state: topStates) {
+            stateAncestorMap.putAll(generateStateAncestorMap(state, new ArrayList<State>()));
+        }
+
+        return stateAncestorMap;
+    }
+
+    private static Map<State, List<State>> generateStateAncestorMap(State state, List<State> ancestors) {
+        Map<State, List<State>> stateAncestorMap = new HashMap<State, List<State>>();
+        stateAncestorMap.put(state, ancestors);
+
+        List<State> subStateAncestors = new ArrayList<State>(ancestors);
+        subStateAncestors.add(state);
+
+        for (State subState: state.getSubStates())
+        {
+            stateAncestorMap.putAll(generateStateAncestorMap(subState, subStateAncestors));
+        }
+
+        return stateAncestorMap;
     }
 }
