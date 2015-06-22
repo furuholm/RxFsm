@@ -1,3 +1,5 @@
+package rxfsm;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -11,36 +13,7 @@ import rx.subjects.*;
 public class FsmTests {
 
     @Test
-    public void switchState() {
-        List<String> result = new ArrayList<String>();
-        State s1 = new StateBuilder()
-            .withOnEnter( () -> result.add("enter s1") )
-            .withOnExit(() -> result.add("exit s1"))
-            .build();
-        State s2 = new StateBuilder().build();
-
-        BehaviorSubject<String> o1 = BehaviorSubject.create();
-
-        FsmBuilder builder = new FsmBuilder(s1)
-                .withTransition(s1, s2, o1, () -> result.add("t1"));
-
-        Fsm fsm = builder
-                .withTopStates(s1)
-                .build();
-        fsm.activate();
-
-        o1.onNext("");
-
-        List<String> expected = new ArrayList<String>();
-        expected.add("enter s1");
-        expected.add("t1");
-        expected.add("exit s1");
-
-        assertEquals(expected, result);
-    }
-
-    @Test
-    public void switchMoreStates() {
+    public void switchStates() {
 
         List<String> result = new ArrayList<String>();
 
@@ -80,14 +53,8 @@ public class FsmTests {
         assertEquals(expected, result);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void topStatesAreRequired() {
-        State s = new StateBuilder().build();
-        new FsmBuilder(s).build();
-    }
-
     @Test
-    public void switchSubState() {
+    public void switchSubStates() {
         List<String> result = new ArrayList<String>();
 
         State s1_1 = new StateBuilder()
@@ -184,10 +151,10 @@ public class FsmTests {
         assertEquals(expected, result);
     }
 
-    @Test
-    public void testCompleteHSM() {
-        // Test Miro's HSM example
-
+    @Test(expected = IllegalArgumentException.class)
+    public void topStatesAreRequired() {
+        State s = new StateBuilder().build();
+        new FsmBuilder(s).build();
     }
 
 }
