@@ -3,8 +3,11 @@ package rxfsm;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.HashMap;
+import java.util.stream.Stream;
 
 import rx.Observable;
 import rx.Subscription;
@@ -49,17 +52,22 @@ public class Fsm {
 		enter(initialState);
 	}
 
-    private void switchState(State newState) {
+    private void switchState(State targetState) {
+        State actualTargetState = targetState;
+        while (actualTargetState.getInitialSubState() != null) {
+            actualTargetState = actualTargetState.getInitialSubState();
+        }
+
         TransitionPath path =
                 TransitionPathCalculator.calculateTransitionPath(
                         stateAncestorMap.get(currentState),
-                        stateAncestorMap.get(newState));
+                        stateAncestorMap.get(actualTargetState));
 
         deactivateTransitions();
         exit(currentState);
         exitStates(path.getStatesToExit());
         enterStates(path.getStatesToEnter());
-        enter(newState);
+        enter(actualTargetState);
     }
 
 	private void enter(State state) {
@@ -95,18 +103,35 @@ public class Fsm {
         }
     }
 
+    // http://stackoverflow.com/questions/27870136/java-lambda-stream-distinct-on-arbitrary-key
+    private static <T> Predicate<T> distinctByKey(Function<? super T,Object> keyExtractor) {
+        Map<Object,Boolean> seen = new HashMap<>();
+        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+    }
+
     private void activateTransitions() {
-		List<Transition> toActivate = transitions.get(currentState);
+        Stream<State> statesWhosTransitionsToActivate
+                = Stream.concat(Stream.of(currentState),
+                                stateAncestorMap.get(currentState).stream());
+
+		List<Transition> toActivate
+                = statesWhosTransitionsToActivate
+                    .filter(state -> transitions.get(state) != null)
+                    .flatMap(state -> transitions.get(state).stream())
+                    .collect(Collectors.toList());
 
 		if (toActivate != null && !toActivate.isEmpty()) {
-			List<Observable<State>> observables
+			List<Observable<State>> observablesToSubscribeTo
 				= toActivate
 					.stream()
-					.map(t -> t.observable())
+                    // Filter out those observables who's event is already handled by another observable.
+                    // This is to handle "overriding" of event handling (ultimate hook pattern)
+                    .filter(distinctByKey(transition -> transition.event()))
+					.map(transition -> transition.observable())
 					.collect(Collectors.toList());
 
 			Subscription s = Observable
-				.merge(observables)
+				.merge(observablesToSubscribeTo)
 				.subscribe(newState -> switchState(newState));
 
 			transitionsSubscriptions.add(s);

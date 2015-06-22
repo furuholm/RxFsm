@@ -40,7 +40,7 @@ public class FsmTests {
     }
 
     @Test
-    public void simpleFsm() {
+    public void switchMoreStates() {
 
         List<String> result = new ArrayList<String>();
 
@@ -86,34 +86,6 @@ public class FsmTests {
         new FsmBuilder(s).build();
     }
 
-//    @Test
-//    public void generateStateAncestorMap(){
-//        State s1_1 = new StateBuilder()
-//                .build();
-//
-//        State s1 = new StateBuilder()
-//                .withInitialSubState(s1_1)
-//                .build();
-//
-//        State s2_1 = new StateBuilder()
-//                .build();
-//
-//        State s2_2 = new StateBuilder()
-//                .build();
-//
-//        State s2 = new StateBuilder()
-//                .withInitialSubState(s2_1)
-//                .withSubState(s2_2)
-//                .build();
-//
-//        List<State> topStates = new ArrayList<State>(Arrays.asList(s1, s2));
-//
-//        Map<State, List<State>> ancestorMap = FsmBuilder.generateStateAncestorMap(topStates);
-//
-//        assertTrue(ancestorMap.get(s1).isEmpty());
-//        assertEquals(Arrays.asList(s1), ancestorMap.get(s1_1));
-//    }
-
     @Test
     public void switchSubState() {
         List<String> result = new ArrayList<String>();
@@ -123,10 +95,16 @@ public class FsmTests {
                 .withOnExit(() -> result.add("exit s1.1"))
                 .build();
 
+        State s1_2 = new StateBuilder()
+                .withOnEnter( () -> result.add("enter s1.2") )
+                .withOnExit(() -> result.add("exit s1.2"))
+                .build();
+
         State s1 = new StateBuilder()
                 .withOnEnter( () -> result.add("enter s1") )
                 .withOnExit(() -> result.add("exit s1"))
                 .withInitialSubState(s1_1)
+                .withSubState(s1_2)
                 .build();
 
         State s2_1 = new StateBuilder()
@@ -147,31 +125,61 @@ public class FsmTests {
                 .build();
 
 
-        PublishSubject<String> o1 = PublishSubject.create();
-        PublishSubject<String> o2 = PublishSubject.create();
+        PublishSubject<String> t1 = PublishSubject.create();
+        PublishSubject<String> t2 = PublishSubject.create();
+        PublishSubject<String> t3 = PublishSubject.create();
 
         FsmBuilder builder = new FsmBuilder(s1)
                 .withTopStates(s1, s2)
-                .withTransition(s1_1, s2_1, o1, () -> result.add("t1 triggered"))
-                .withTransition(s2_1, s2_2, o2, () -> result.add("t2 triggered"));
+                .withTransition(s1_1, s2_2, t1, () -> result.add("t1 triggered"))
+                .withTransition(s2_2, s2_1, t2, () -> result.add("t2 triggered"))
+                .withTransition(s2, s1, t3, () -> result.add("t3 triggered from s2"))
+                .withTransition(s2_2, s1_2, t3, () -> result.add("t3 triggered from s2.2"));
 
         Fsm fsm = builder.build();
         fsm.activate();
 
-        o1.onNext("");
-        o2.onNext("");
+        // Should transition to s2_2
+        t1.onNext("");
+        // Should transition to s2_1
+        t2.onNext("");
+        // Should transition to s1_1 since s2 has registered a transition to s1
+        // (which should result in a transition to its initial sub state s1_1)
+        t3.onNext("");
+        // Should transition to s2_2
+        t1.onNext("");
+        // Should transition to s1_2 since s2_2 has "overridden" t3
+        t3.onNext("");
 
         List<String> expected = new ArrayList<String>();
+        expected.add("enter s1");
+        expected.add("enter s1.1");
+        // t1
+        expected.add("t1 triggered");
+        expected.add("exit s1.1");
+        expected.add("exit s1");
+        expected.add("enter s2");
+        expected.add("enter s2.2");
+        // t2
+        expected.add("t2 triggered");
+        expected.add("exit s2.2");
+        expected.add("enter s2.1");
+        // t3
+        expected.add("t3 triggered from s2");
+        expected.add("exit s2.1");
+        expected.add("exit s2");
         expected.add("enter s1");
         expected.add("enter s1.1");
         expected.add("t1 triggered");
         expected.add("exit s1.1");
         expected.add("exit s1");
         expected.add("enter s2");
-        expected.add("enter s2.1");
-        expected.add("t2 triggered");
-        expected.add("exit s2.1");
         expected.add("enter s2.2");
+        expected.add("t3 triggered from s2.2");
+        expected.add("exit s2.2");
+        expected.add("exit s2");
+        expected.add("enter s1");
+        expected.add("enter s1.2");
 
         assertEquals(expected, result);
     }

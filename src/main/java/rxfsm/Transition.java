@@ -10,6 +10,7 @@ public class Transition {
     private final State source;
     private final State target;
 	// private final String name;
+    private final Object event;
 	private final Observable<State> observable;
 
 	public final static <T> Transition create(Observable<T> event, State source, State target, Action0 action) {
@@ -17,15 +18,16 @@ public class Transition {
 			action.call();
 			return target;
 		});
-		return new Transition(source, target, o);
+		return new Transition(event, source, target, o);
 	}
 
-	private Transition(State source, State target, Observable<State> o) {
+	private <T> Transition(Observable<T> event, State source, State target, Observable<State> o) {
 		this.target = target;
         this.source = source;
 		// this.name = null;
 		this.observable = o;
-	}
+        this.event = event;
+    }
 
     State source() { return source; }
 
@@ -36,4 +38,8 @@ public class Transition {
 	Observable<State> observable() {
 		return observable;
 	}
+
+    Object event() {
+        return this.event;
+    }
 }
