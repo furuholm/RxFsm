@@ -99,7 +99,7 @@ public class FsmTests {
         FsmBuilder builder = new FsmBuilder(s1)
                 .withTopStates(s1, s2)
                 .withTransition(s1_1, s2_2, t1, (s) -> result.add("t1 triggered: " + s))
-                .withTransition(s2_2, s2_1, t2, (s) -> result.add("t2 triggered: " + s))
+                .withTransition(s2_2, s2_1, t2, (s) -> result.add("t2 triggered: " + s), (s) -> s.equals("c"))
                 .withTransition(s2, s1, t3, (s) -> result.add("t3 triggered from s2: " + s))
                 .withTransition(s2_2, s1_2, t3, (s) -> result.add("t3 triggered from s2.2: " + s));
 
@@ -108,15 +108,17 @@ public class FsmTests {
 
         // Should transition to s2_2
         t1.onNext("a");
-        // Should transition to s2_1
+        // Should not transition since guard function will not be evaluated to true
         t2.onNext("b");
+        // Should transition to s2_1
+        t2.onNext("c");
         // Should transition to s1_1 since s2 has registered a transition to s1
         // (which should result in a transition to its initial sub state s1_1)
-        t3.onNext("c");
+        t3.onNext("d");
         // Should transition to s2_2
-        t1.onNext("d");
+        t1.onNext("e");
         // Should transition to s1_2 since s2_2 has "overridden" t3
-        t3.onNext("e");
+        t3.onNext("f");
 
         List<String> expected = new ArrayList<String>();
         expected.add("enter s1");
@@ -128,21 +130,21 @@ public class FsmTests {
         expected.add("enter s2");
         expected.add("enter s2.2");
         // t2
-        expected.add("t2 triggered: b");
+        expected.add("t2 triggered: c");
         expected.add("exit s2.2");
         expected.add("enter s2.1");
         // t3
-        expected.add("t3 triggered from s2: c");
+        expected.add("t3 triggered from s2: d");
         expected.add("exit s2.1");
         expected.add("exit s2");
         expected.add("enter s1");
         expected.add("enter s1.1");
-        expected.add("t1 triggered: d");
+        expected.add("t1 triggered: e");
         expected.add("exit s1.1");
         expected.add("exit s1");
         expected.add("enter s2");
         expected.add("enter s2.2");
-        expected.add("t3 triggered from s2.2: e");
+        expected.add("t3 triggered from s2.2: f");
         expected.add("exit s2.2");
         expected.add("exit s2");
         expected.add("enter s1");

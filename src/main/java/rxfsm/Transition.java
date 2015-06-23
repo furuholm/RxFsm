@@ -3,6 +3,7 @@ package rxfsm;
 import rx.Observable;
 import rx.functions.Action1;
 
+import rx.functions.Func1;
 import rxfsm.State;
 
 public class Transition {
@@ -14,12 +15,23 @@ public class Transition {
 	private final Observable<State> observable;
 
 	public final static <T> Transition create(Observable<T> event, State source, State target, Action1<T> action) {
-		Observable<State> o = event.map((T t) -> {
-			action.call(t);
-			return target;
-		});
+		Observable<State> o = event
+            .map((T t) -> {
+                action.call(t);
+                return target;
+            });
 		return new Transition(event, source, target, o);
 	}
+
+    public final static <T> Transition create(Observable<T> event, State source, State target, Action1<T> action, Func1<? super T, Boolean> guard) {
+        Observable<State> o = event
+            .filter(guard)
+            .map((T t) -> {
+                action.call(t);
+                return target;
+            });
+        return new Transition(event, source, target, o);
+    }
 
 	private <T> Transition(Observable<T> event, State source, State target, Observable<State> o) {
 		this.target = target;
