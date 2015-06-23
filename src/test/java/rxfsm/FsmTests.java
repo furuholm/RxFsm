@@ -95,13 +95,18 @@ public class FsmTests {
         PublishSubject<String> t1 = PublishSubject.create();
         PublishSubject<String> t2 = PublishSubject.create();
         PublishSubject<String> t3 = PublishSubject.create();
+        PublishSubject<String> t4 = PublishSubject.create();
+        PublishSubject<String> t5 = PublishSubject.create();
 
         FsmBuilder builder = new FsmBuilder(s1)
                 .withTopStates(s1, s2)
                 .withTransition(s1_1, s2_2, t1, (s) -> result.add("t1 triggered: " + s))
                 .withTransition(s2_2, s2_1, t2, (s) -> result.add("t2 triggered: " + s), (s) -> s.equals("c"))
                 .withTransition(s2, s1, t3, (s) -> result.add("t3 triggered from s2: " + s))
-                .withTransition(s2_2, s1_2, t3, (s) -> result.add("t3 triggered from s2.2: " + s));
+                .withTransition(s2_2, s1_2, t3, (s) -> result.add("t3 triggered from s2.2: " + s))
+                .withInternalTransition(s1, t4, (s) -> result.add("t4 triggered internal transition from s1: " + s))
+                .withInternalTransition(s1, t5, (s) -> result.add("t5 triggered internal transition from s1: " + s))
+                .withInternalTransition(s1_2, t5, (s) -> result.add("t5 triggered internal transition from s1_2: " + s));
 
         Fsm fsm = builder.build();
         fsm.activate();
@@ -119,6 +124,10 @@ public class FsmTests {
         t1.onNext("e");
         // Should transition to s1_2 since s2_2 has "overridden" t3
         t3.onNext("f");
+        // Should trigger internal transition
+        t4.onNext("g");
+        // Should trigger internal transition from s1_2, which should "override" internal transition in s1
+        t5.onNext("h");
 
         List<String> expected = new ArrayList<String>();
         expected.add("enter s1");
@@ -149,6 +158,10 @@ public class FsmTests {
         expected.add("exit s2");
         expected.add("enter s1");
         expected.add("enter s1.2");
+        // t4
+        expected.add("t4 triggered internal transition from s1: g");
+        // t5
+        expected.add("t5 triggered internal transition from s1_2: h");
 
         assertEquals(expected, result);
     }
