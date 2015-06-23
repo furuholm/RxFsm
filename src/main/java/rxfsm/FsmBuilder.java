@@ -1,7 +1,7 @@
 package rxfsm;
 
 import rx.Observable;
-import rx.functions.Action0;
+import rx.functions.Action1;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,7 +35,7 @@ public class FsmBuilder {
         return new FsmBuilder(initialState, transitions, Arrays.asList(topStates));
     }
 
-    public <T> FsmBuilder withTransition(State source, State target, Observable<T> event, Action0 action)
+    public <T> FsmBuilder withTransition(State source, State target, Observable<T> event, Action1<T> action)
     {
         List<Transition> newTransitions = new ArrayList<Transition>(transitions);
         newTransitions.add(Transition.create(event, source, target, action));

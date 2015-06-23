@@ -1,7 +1,7 @@
 package rxfsm;
 
 import rx.Observable;
-import rx.functions.Action0;
+import rx.functions.Action1;
 
 import rxfsm.State;
 
@@ -13,9 +13,9 @@ public class Transition {
     private final Object event;
 	private final Observable<State> observable;
 
-	public final static <T> Transition create(Observable<T> event, State source, State target, Action0 action) {
+	public final static <T> Transition create(Observable<T> event, State source, State target, Action1<T> action) {
 		Observable<State> o = event.map((T t) -> {
-			action.call();
+			action.call(t);
 			return target;
 		});
 		return new Transition(event, source, target, o);

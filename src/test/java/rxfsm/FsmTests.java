@@ -32,21 +32,21 @@ public class FsmTests {
 
         FsmBuilder builder = new FsmBuilder(s1)
                 .withTopStates(s1, s2)
-                .withTransition(s1, s2, o1, () -> result.add("t1 triggered"))
-                .withTransition(s2, s1, o2, () -> result.add("t2 triggered"));
+                .withTransition(s1, s2, o1, (s) -> result.add("t1 triggered: " + s))
+                .withTransition(s2, s1, o2, (s) -> result.add("t2 triggered: " + s));
 
         Fsm fsm = builder.build();
         fsm.activate();
 
-        o1.onNext("");
-        o2.onNext("");
+        o1.onNext("a");
+        o2.onNext("b");
 
         List<String> expected = new ArrayList<String>();
         expected.add("enter s1");
-        expected.add("t1 triggered");
+        expected.add("t1 triggered: a");
         expected.add("exit s1");
         expected.add("enter s2");
-        expected.add("t2 triggered");
+        expected.add("t2 triggered: b");
         expected.add("exit s2");
         expected.add("enter s1");
 
@@ -98,51 +98,51 @@ public class FsmTests {
 
         FsmBuilder builder = new FsmBuilder(s1)
                 .withTopStates(s1, s2)
-                .withTransition(s1_1, s2_2, t1, () -> result.add("t1 triggered"))
-                .withTransition(s2_2, s2_1, t2, () -> result.add("t2 triggered"))
-                .withTransition(s2, s1, t3, () -> result.add("t3 triggered from s2"))
-                .withTransition(s2_2, s1_2, t3, () -> result.add("t3 triggered from s2.2"));
+                .withTransition(s1_1, s2_2, t1, (s) -> result.add("t1 triggered: " + s))
+                .withTransition(s2_2, s2_1, t2, (s) -> result.add("t2 triggered: " + s))
+                .withTransition(s2, s1, t3, (s) -> result.add("t3 triggered from s2: " + s))
+                .withTransition(s2_2, s1_2, t3, (s) -> result.add("t3 triggered from s2.2: " + s));
 
         Fsm fsm = builder.build();
         fsm.activate();
 
         // Should transition to s2_2
-        t1.onNext("");
+        t1.onNext("a");
         // Should transition to s2_1
-        t2.onNext("");
+        t2.onNext("b");
         // Should transition to s1_1 since s2 has registered a transition to s1
         // (which should result in a transition to its initial sub state s1_1)
-        t3.onNext("");
+        t3.onNext("c");
         // Should transition to s2_2
-        t1.onNext("");
+        t1.onNext("d");
         // Should transition to s1_2 since s2_2 has "overridden" t3
-        t3.onNext("");
+        t3.onNext("e");
 
         List<String> expected = new ArrayList<String>();
         expected.add("enter s1");
         expected.add("enter s1.1");
         // t1
-        expected.add("t1 triggered");
+        expected.add("t1 triggered: a");
         expected.add("exit s1.1");
         expected.add("exit s1");
         expected.add("enter s2");
         expected.add("enter s2.2");
         // t2
-        expected.add("t2 triggered");
+        expected.add("t2 triggered: b");
         expected.add("exit s2.2");
         expected.add("enter s2.1");
         // t3
-        expected.add("t3 triggered from s2");
+        expected.add("t3 triggered from s2: c");
         expected.add("exit s2.1");
         expected.add("exit s2");
         expected.add("enter s1");
         expected.add("enter s1.1");
-        expected.add("t1 triggered");
+        expected.add("t1 triggered: d");
         expected.add("exit s1.1");
         expected.add("exit s1");
         expected.add("enter s2");
         expected.add("enter s2.2");
-        expected.add("t3 triggered from s2.2");
+        expected.add("t3 triggered from s2.2: e");
         expected.add("exit s2.2");
         expected.add("exit s2");
         expected.add("enter s1");
