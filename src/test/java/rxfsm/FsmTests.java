@@ -18,12 +18,12 @@ public class FsmTests {
         List<String> result = new ArrayList<String>();
 
         State s1 = new StateBuilder()
-            .withOnEnter( () -> result.add("enter s1") )
+            .withOnEntry( () -> result.add("enter s1") )
             .withOnExit(() -> result.add("exit s1"))
             .build();
 
         State s2 = new StateBuilder()
-            .withOnEnter( () -> result.add("enter s2") )
+            .withOnEntry( () -> result.add("enter s2") )
             .withOnExit(() -> result.add("exit s2"))
             .build();
 
@@ -58,34 +58,34 @@ public class FsmTests {
         List<String> result = new ArrayList<String>();
 
         State s1_1 = new StateBuilder()
-                .withOnEnter( () -> result.add("enter s1.1") )
+                .withOnEntry( () -> result.add("enter s1.1") )
                 .withOnExit(() -> result.add("exit s1.1"))
                 .build();
 
         State s1_2 = new StateBuilder()
-                .withOnEnter( () -> result.add("enter s1.2") )
+                .withOnEntry( () -> result.add("enter s1.2") )
                 .withOnExit(() -> result.add("exit s1.2"))
                 .build();
 
         State s1 = new StateBuilder()
-                .withOnEnter( () -> result.add("enter s1") )
+                .withOnEntry( () -> result.add("enter s1") )
                 .withOnExit(() -> result.add("exit s1"))
                 .withInitialSubState(s1_1)
                 .withSubState(s1_2)
                 .build();
 
         State s2_1 = new StateBuilder()
-                .withOnEnter( () -> result.add("enter s2.1") )
+                .withOnEntry( () -> result.add("enter s2.1") )
                 .withOnExit(() -> result.add("exit s2.1"))
                 .build();
 
         State s2_2 = new StateBuilder()
-                .withOnEnter( () -> result.add("enter s2.2") )
+                .withOnEntry( () -> result.add("enter s2.2") )
                 .withOnExit(() -> result.add("exit s2.2"))
                 .build();
 
         State s2 = new StateBuilder()
-                .withOnEnter( () -> result.add("enter s2") )
+                .withOnEntry( () -> result.add("enter s2") )
                 .withOnExit(() -> result.add("exit s2"))
                 .withInitialSubState(s2_1)
                 .withSubState(s2_2)
