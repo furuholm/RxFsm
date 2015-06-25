@@ -27,20 +27,20 @@ public class FsmTests {
             .withOnExit(() -> result.add("exit s2"))
             .build();
 
-        PublishSubject<String> o1 = PublishSubject.create();
-        PublishSubject<String> o2 = PublishSubject.create();
+        PublishSubject<String> t1 = PublishSubject.create();
+        PublishSubject<String> t2 = PublishSubject.create();
 
         FsmBuilder builder = new FsmBuilder()
                 .withInitialState(s1)
                 .withTopStates(s1, s2)
-                .withTransition(s1, s2, o1, (s) -> result.add("t1 triggered: " + s))
-                .withTransition(s2, s1, o2, (s) -> result.add("t2 triggered: " + s));
+                .withTransition(s1, s2, t1, s -> result.add("t1 triggered: " + s))
+                .withTransition(s2, s1, t2, s -> result.add("t2 triggered: " + s));
 
         Fsm fsm = builder.build();
         fsm.activate();
 
-        o1.onNext("a");
-        o2.onNext("b");
+        t1.onNext("a");
+        t2.onNext("b");
 
         List<String> expected = new ArrayList<String>();
         expected.add("enter s1");
@@ -104,10 +104,10 @@ public class FsmTests {
         FsmBuilder builder = new FsmBuilder()
                 .withInitialState(s1)
                 .withTopStates(s1, s2)
-                .withTransition(s1_1, s2_2, t1, (s) -> result.add("t1 triggered: " + s))
-                .withTransition(s2_2, s2_1, t2, (s) -> result.add("t2 triggered: " + s), (s) -> s.equals("c"))
-                .withTransition(s2, s1, t3, (s) -> result.add("t3 triggered from s2: " + s))
-                .withTransition(s2_2, s1_2, t3, (s) -> result.add("t3 triggered from s2.2: " + s));
+                .withTransition(s1_1, s2_2, t1, s -> result.add("t1 triggered: " + s))
+                .withTransition(s2_2, s2_1, t2, s -> result.add("t2 triggered: " + s), s -> s.equals("c"))
+                .withTransition(s2, s1, t3, s -> result.add("t3 triggered from s2: " + s))
+                .withTransition(s2_2, s1_2, t3, s -> result.add("t3 triggered from s2.2: " + s));
 
         Fsm fsm = builder.build();
         fsm.activate();
