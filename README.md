@@ -5,16 +5,15 @@ implement the semantics outlined in "Practical UML Statecharts in C/C++, 2nd
 Edition" by Miro Samek (which is a must read for those interested in the subject).
 
 ## Getting started
-### StateBuilder
-Start by creating the states.
+##### StateBuilder
+Let's start by creating a few states using the StateBuilder class.
 
 ```Java
-  // Create some states
   State s1_1 = new StateBuilder().build();
   State s1_2 = new StateBuilder().build();
 ```
 
-#### onEntry and onExit
+##### Register onEntry and onExit actions
 The StateBuilder class allows you to register onEntry and onExit actions which 
 are functions that are executed as the state is entered or exited. 
 
@@ -26,7 +25,7 @@ are functions that are executed as the state is entered or exited.
                 .build();
 ```
 
-#### Sub states
+##### Sub states
 Sub states are added using the withSubState method
 
 ```Java
@@ -46,7 +45,7 @@ At this point both s1 and s1_1 are being active (In an hierarchical FSM, more th
 one state can be active at once). For comparison a transition directly to s1_2 
 would result in s1 and s1_2 being active instead.
 
-#### Interal transitions
+##### Interal transitions
 StateBuilder can also be used to register internal transitions
 
 ```Java
@@ -58,7 +57,7 @@ StateBuilder can also be used to register internal transitions
 An internal transition is a transition that does not cause the current state to
 be entered nor exited when triggered.
 
-### FsmBuilder
+##### FsmBuilder
 Once you have created the states that are to be included in the FSM it is time
 to put them to use in an actual FSM.
 
@@ -69,9 +68,12 @@ to put them to use in an actual FSM.
         .build();
 ```
 
-You have to provide an initial state and one or more top states for an Fsn to
-be valid. For an Fsm to do anything interesting you also have to to add some
-transitions. The withTransition method is used to register transitions.
+You have to provide an initial state and one or more top states for an Fsm to
+be valid. 
+
+##### Register transitions
+For an Fsm to do anything interesting you also have to to add some transitions. 
+The withTransition method is used to register transitions.
 
 ```Java
     Fsm fsm2 = new FsmBuilder()
@@ -89,14 +91,14 @@ represented by an Observable that the Fsm will subscribe to when a state from wh
 the transition can be triggered become active. The Observable will be unsubscribed
 as soon as any (non-internal) transition is triggered.
 
-### Activate the FSM
-Finally you need to activate the Fsm. 
+##### Activate the FSM
+Finally you need to activate the Fsm.
 
 ```Java
     fsm3.activate();
 ```
 
-This will make the Fsm activate the initial state. 
+This will make the Fsm activate the initial state.
 
 ## Examples
 See unit tests for examples (FsmTests.java) and an illustration of supported features.
