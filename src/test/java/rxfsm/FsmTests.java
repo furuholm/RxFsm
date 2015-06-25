@@ -57,6 +57,12 @@ public class FsmTests {
     public void switchSubStates() {
         List<String> result = new ArrayList<String>();
 
+        PublishSubject<String> t1 = PublishSubject.create();
+        PublishSubject<String> t2 = PublishSubject.create();
+        PublishSubject<String> t3 = PublishSubject.create();
+        PublishSubject<String> t4 = PublishSubject.create();
+        PublishSubject<String> t5 = PublishSubject.create();
+
         State s1_1 = new StateBuilder()
                 .withOnEntry( () -> result.add("enter s1.1") )
                 .withOnExit(() -> result.add("exit s1.1"))
@@ -65,6 +71,7 @@ public class FsmTests {
         State s1_2 = new StateBuilder()
                 .withOnEntry( () -> result.add("enter s1.2") )
                 .withOnExit(() -> result.add("exit s1.2"))
+                .withInternalTransition(t5, (s) -> result.add("t5 triggered internal transition from s1_2: " + s))
                 .build();
 
         State s1 = new StateBuilder()
@@ -72,6 +79,8 @@ public class FsmTests {
                 .withOnExit(() -> result.add("exit s1"))
                 .withInitialSubState(s1_1)
                 .withSubState(s1_2)
+                .withInternalTransition(t4, (s) -> result.add("t4 triggered internal transition from s1: " + s))
+                .withInternalTransition(t5, (s) -> result.add("t5 triggered internal transition from s1: " + s))
                 .build();
 
         State s2_1 = new StateBuilder()
@@ -91,22 +100,12 @@ public class FsmTests {
                 .withSubState(s2_2)
                 .build();
 
-
-        PublishSubject<String> t1 = PublishSubject.create();
-        PublishSubject<String> t2 = PublishSubject.create();
-        PublishSubject<String> t3 = PublishSubject.create();
-        PublishSubject<String> t4 = PublishSubject.create();
-        PublishSubject<String> t5 = PublishSubject.create();
-
         FsmBuilder builder = new FsmBuilder(s1)
                 .withTopStates(s1, s2)
                 .withTransition(s1_1, s2_2, t1, (s) -> result.add("t1 triggered: " + s))
                 .withTransition(s2_2, s2_1, t2, (s) -> result.add("t2 triggered: " + s), (s) -> s.equals("c"))
                 .withTransition(s2, s1, t3, (s) -> result.add("t3 triggered from s2: " + s))
-                .withTransition(s2_2, s1_2, t3, (s) -> result.add("t3 triggered from s2.2: " + s))
-                .withInternalTransition(s1, t4, (s) -> result.add("t4 triggered internal transition from s1: " + s))
-                .withInternalTransition(s1, t5, (s) -> result.add("t5 triggered internal transition from s1: " + s))
-                .withInternalTransition(s1_2, t5, (s) -> result.add("t5 triggered internal transition from s1_2: " + s));
+                .withTransition(s2_2, s1_2, t3, (s) -> result.add("t3 triggered from s2.2: " + s));
 
         Fsm fsm = builder.build();
         fsm.activate();

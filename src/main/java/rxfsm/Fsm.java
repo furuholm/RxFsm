@@ -19,11 +19,10 @@ public class Fsm {
 	private State currentState;
 	private final CompositeSubscription transitionsSubscriptions;
 	private final HashMap<State, List<Transition>> transitions;
-    private final HashMap<State, List<Transition>> internalTransitions;
     private final Map<State, List<State>> stateAncestorMap;
     private final List<State> topStates;
 
-	public Fsm(State initialState, List<Transition> transitions, List<Transition> internalTransitions, List<State> topStates) {
+	public Fsm(State initialState, List<Transition> transitions, List<State> topStates) {
 		this.initialState = initialState;
 
 		this.transitions = new HashMap<State, List<Transition>>();
@@ -37,20 +36,6 @@ public class Fsm {
             else
             {
                 this.transitions.get(t.source()).add(t);
-            }
-        }
-
-        this.internalTransitions = new HashMap<State, List<Transition>>();
-        for (Transition t: internalTransitions) {
-            if (!this.internalTransitions.containsKey(t.source()))
-            {
-                List<Transition> transitionList = new ArrayList();
-                transitionList.add(t);
-                this.internalTransitions.put(t.source(), transitionList);
-            }
-            else
-            {
-                this.internalTransitions.get(t.source()).add(t);
             }
         }
 
@@ -140,7 +125,7 @@ public class Fsm {
 
         // Internal transitions
         List<Observable<State>> observableInternalTransitions
-                = generateObservableTransitionList(currentState, stateAncestorMap.get(currentState), internalTransitions);
+                = generateObservableInternalTransitionList(currentState, stateAncestorMap.get(currentState));
 
         if (!observableInternalTransitions.isEmpty()) {
             Subscription s = Observable
@@ -184,7 +169,34 @@ public class Fsm {
     }
 
 
-        private void deactivateTransitions() {
+    private static List<Observable<State>> generateObservableInternalTransitionList(
+            State sourceState, List<State> ancestors) {
+        Stream<State> statesWhosTransitionsToActivate
+                = Stream.concat(Stream.of(sourceState), ancestors.stream());
+
+        List<Transition> toActivate
+                = statesWhosTransitionsToActivate
+                .flatMap(state -> state.getInternalTransitions().stream())
+                .collect(Collectors.toList());
+
+        if (toActivate != null && !toActivate.isEmpty()) {
+            List<Observable<State>> observableTransitions
+                    = toActivate
+                    .stream()
+                            // Filter out those observables who's event is already handled by another observable.
+                            // This is to handle "overriding" of event handling (ultimate hook pattern)
+                    .filter(distinctByKey(transition -> transition.event()))
+                    .map(transition -> transition.observable())
+                    .collect(Collectors.toList());
+
+            return observableTransitions;
+        }
+        else {
+            return new ArrayList<Observable<State>>();
+        }
+    }
+
+    private void deactivateTransitions() {
         transitionsSubscriptions.clear();
     }
 
