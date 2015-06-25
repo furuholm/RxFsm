@@ -104,7 +104,7 @@ This will make the Fsm activate the initial state.
 See unit tests for examples (FsmTests.java) and an illustration of supported features.
 
 ## TODO
-- Add guard for intneral transitions
+- Add guard for internal transitions
 - Generate SCXML from FSM
 - Transition to history
 - Improved documentation
