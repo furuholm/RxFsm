@@ -13,8 +13,8 @@ public class FsmBuilder {
     private final List<Transition> transitions;
     private List<State> topStates;
 
-    public FsmBuilder(State initalState){
-        this.initialState = initalState;
+    public FsmBuilder(){
+        this.initialState = null;
         this.transitions = new ArrayList<Transition>();
         this.topStates = null;
     }
@@ -26,6 +26,10 @@ public class FsmBuilder {
         }
 
         return new Fsm(initialState, transitions, topStates);
+    }
+
+    public FsmBuilder withInitialState(State initialState) {
+        return new FsmBuilder(initialState, transitions, topStates);
     }
 
     public FsmBuilder withTopStates(State... topStates) {

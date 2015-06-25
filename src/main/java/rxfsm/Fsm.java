@@ -23,6 +23,9 @@ public class Fsm {
     private final List<State> topStates;
 
 	public Fsm(State initialState, List<Transition> transitions, List<State> topStates) {
+        if (initialState == null) {
+            throw new IllegalArgumentException("Initial state needs to be provided");
+        }
 		this.initialState = initialState;
 
 		this.transitions = new HashMap<State, List<Transition>>();

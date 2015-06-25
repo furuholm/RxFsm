@@ -30,7 +30,8 @@ public class FsmTests {
         PublishSubject<String> o1 = PublishSubject.create();
         PublishSubject<String> o2 = PublishSubject.create();
 
-        FsmBuilder builder = new FsmBuilder(s1)
+        FsmBuilder builder = new FsmBuilder()
+                .withInitialState(s1)
                 .withTopStates(s1, s2)
                 .withTransition(s1, s2, o1, (s) -> result.add("t1 triggered: " + s))
                 .withTransition(s2, s1, o2, (s) -> result.add("t2 triggered: " + s));
@@ -100,7 +101,8 @@ public class FsmTests {
                 .withSubState(s2_2)
                 .build();
 
-        FsmBuilder builder = new FsmBuilder(s1)
+        FsmBuilder builder = new FsmBuilder()
+                .withInitialState(s1)
                 .withTopStates(s1, s2)
                 .withTransition(s1_1, s2_2, t1, (s) -> result.add("t1 triggered: " + s))
                 .withTransition(s2_2, s2_1, t2, (s) -> result.add("t2 triggered: " + s), (s) -> s.equals("c"))
@@ -168,7 +170,7 @@ public class FsmTests {
     @Test(expected = IllegalArgumentException.class)
     public void topStatesAreRequired() {
         State s = new StateBuilder().build();
-        new FsmBuilder(s).build();
+        new FsmBuilder().withInitialState(s).build();
     }
 
 }
