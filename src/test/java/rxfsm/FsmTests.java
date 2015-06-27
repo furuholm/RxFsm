@@ -72,7 +72,9 @@ public class FsmTests {
         State s1_2 = new StateBuilder()
                 .withOnEntry( () -> result.add("enter s1.2") )
                 .withOnExit(() -> result.add("exit s1.2"))
-                .withInternalTransition(t5, (s) -> result.add("t5 triggered internal transition from s1_2: " + s))
+                .withInternalTransition(t5,
+                                        s -> result.add("t5 triggered internal transition from s1_2: " + s),
+                                        s -> s.equals("i"))
                 .build();
 
         State s1 = new StateBuilder()
@@ -129,6 +131,8 @@ public class FsmTests {
         t4.onNext("g");
         // Should trigger internal transition from s1_2, which should "override" internal transition in s1
         t5.onNext("h");
+        // Should trigger not internal transition since guard will fail
+        t5.onNext("i");
 
         List<String> expected = new ArrayList<String>();
         expected.add("enter s1");
@@ -162,7 +166,7 @@ public class FsmTests {
         // t4
         expected.add("t4 triggered internal transition from s1: g");
         // t5
-        expected.add("t5 triggered internal transition from s1_2: h");
+        expected.add("t5 triggered internal transition from s1_2: i");
 
         assertEquals(expected, result);
     }

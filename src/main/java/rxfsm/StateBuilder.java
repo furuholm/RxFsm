@@ -3,6 +3,7 @@ package rxfsm;
 import rx.Observable;
 import rx.functions.Action0;
 import rx.functions.Action1;
+import rx.functions.Func1;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +62,13 @@ public class StateBuilder {
     {
         List<Transition> newInternalTransitions = new ArrayList<Transition>(internalTransitions);
         newInternalTransitions.add(Transition.create(event, null, null, action));
+        return new StateBuilder(onEntry, onExit, subStates, initialSubState, newInternalTransitions);
+    }
+
+    public <T> StateBuilder withInternalTransition(Observable<T> event, Action1<T> action, Func1<? super T, Boolean> guard)
+    {
+        List<Transition> newInternalTransitions = new ArrayList<Transition>(internalTransitions);
+        newInternalTransitions.add(Transition.create(event, null, null, action, guard));
         return new StateBuilder(onEntry, onExit, subStates, initialSubState, newInternalTransitions);
     }
 

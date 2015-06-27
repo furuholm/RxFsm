@@ -50,7 +50,6 @@ public class FsmBuilder {
     public <T> FsmBuilder withTransition(State source, State target, Observable<T> event, Action1<T> action, Func1<? super T, Boolean> guard)
     {
         List<Transition> newTransitions = new ArrayList<Transition>(transitions);
-        Observable<T> filteredEvent = event.filter(guard);
         newTransitions.add(Transition.create(event, source, target, action, guard));
         return new FsmBuilder(initialState, newTransitions, topStates);
     }
