@@ -12,13 +12,11 @@ public class TransitionPathCalculatorTests {
 
     @Test
     public void calculateTransitionPath() {
-        State s1 = new StateBuilder().build();
-        State s1_1 = new StateBuilder().build();
-        State s1_1_1 = new StateBuilder().build();
-        State s1_2 = new StateBuilder().build();
-        State s2 = new StateBuilder().build();
-        State s2_1 = new StateBuilder().build();
-        State s2_2 = new StateBuilder().build();
+        State s1 = new State("s1");
+        State s1_1 = new State("s1_1");
+        State s1_1_1 = new State("s1_1_1");
+        State s2 = new State("s2");
+        State s2_1 = new State("s2_1");
 
         List<State> stateConfig1 = new ArrayList<State>(Arrays.asList(s1));
         List<State> stateConfig2 = new ArrayList<State>(Arrays.asList(s2));

@@ -4,6 +4,9 @@ machine notation](https://en.wikipedia.org/wiki/UML_state_machine) and strives t
 implement the semantics outlined in "Practical UML Statecharts in C/C++, 2nd 
 Edition" by Miro Samek (which is a must read for those interested in the subject).
 
+## Status
+This library is under development and the API cannot yet be considered stable.
+
 ## Getting started
 ##### StateBuilder
 Let's start by creating a few states using the StateBuilder class.
@@ -104,6 +107,7 @@ This will make the Fsm activate the initial state.
 See unit tests for examples (FsmTests.java) and an illustration of supported features.
 
 ## TODO
+- Clean up code
 - Generate SCXML from FSM
 - Transition to history
 - Improved documentation

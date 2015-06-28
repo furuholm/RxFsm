@@ -2,52 +2,55 @@ package rxfsm;
 
 import rx.Observable;
 import rx.functions.Action1;
-
 import rx.functions.Func1;
-import rxfsm.State;
 
 public class Transition {
 
-    private final State source;
-    private final State target;
-	// private final String name;
+    // private final String description;
     private final Object event;
-	private final Observable<State> observable;
+    private final Observable<String> observable;
 
-	public final static <T> Transition create(Observable<T> event, State source, State target, Action1<T> action) {
-		Observable<State> o = event
-            .map((T t) -> {
-                action.call(t);
-                return target;
-            });
-		return new Transition(event, source, target, o);
-	}
-
-    public final static <T> Transition create(Observable<T> event, State source, State target, Action1<T> action, Func1<? super T, Boolean> guard) {
-        Observable<State> o = event
-            .filter(guard)
-            .map((T t) -> {
-                action.call(t);
-                return target;
-            });
-        return new Transition(event, source, target, o);
-    }
-
-	private <T> Transition(Observable<T> event, State source, State target, Observable<State> o) {
-		this.target = target;
-        this.source = source;
-		// this.name = null;
-		this.observable = o;
+    public <T> Transition(String pathToTargetState, Observable<T> event, Action1<T> action) {
+		this.observable = event
+                .map((T t) -> {
+                    action.call(t);
+                    return pathToTargetState;
+                });
         this.event = event;
     }
 
-    State source() { return source; }
+    public <T> Transition(String pathToTargetState, Observable<T> event, Action1<T> action, Func1<? super T, Boolean> guard) {
+        this.observable = event
+                .filter(guard)
+                .map((T t) -> {
+                    action.call(t);
+                    return pathToTargetState;
+                });
+        this.event = event;
+    }
 
-	State target() {
-		return target;
-	}
+    // Internal transition
+    public <T> Transition(Observable<T> event, Action1<T> action) {
+        this.observable = event
+                .map((T t) -> {
+                    action.call(t);
+                    return null;
+                });
+        this.event = event;
+    }
 
-	Observable<State> observable() {
+    // Internal transition
+    public <T> Transition(Observable<T> event, Action1<T> action, Func1<? super T, Boolean> guard) {
+        this.observable = event
+                .filter(guard)
+                .map((T t) -> {
+                    action.call(t);
+                    return null;
+                });
+        this.event = event;
+    }
+
+	Observable<String> observable() {
 		return observable;
 	}
 

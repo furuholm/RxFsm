@@ -1,13 +1,11 @@
 package rxfsm;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 import java.util.*;
 
-import rxfsm.*;
 import rx.subjects.*;
 
 public class FsmTests {
@@ -17,26 +15,21 @@ public class FsmTests {
 
         List<String> result = new ArrayList<String>();
 
-        State s1 = new StateBuilder()
-            .withOnEntry( () -> result.add("enter s1") )
-            .withOnExit(() -> result.add("exit s1"))
-            .build();
-
-        State s2 = new StateBuilder()
-            .withOnEntry( () -> result.add("enter s2") )
-            .withOnExit(() -> result.add("exit s2"))
-            .build();
-
         PublishSubject<String> t1 = PublishSubject.create();
         PublishSubject<String> t2 = PublishSubject.create();
 
-        FsmBuilder builder = new FsmBuilder()
-                .withInitialState(s1)
-                .withTopStates(s1, s2)
-                .withTransition(s1, s2, t1, s -> result.add("t1 triggered: " + s))
-                .withTransition(s2, s1, t2, s -> result.add("t2 triggered: " + s));
+        State s1 = new State("s1")
+            .withOnEntry(() -> result.add("enter s1"))
+            .withOnExit(() -> result.add("exit s1"))
+            .withTransition("/s2", t1, s -> result.add("t1 triggered: " + s));
 
-        Fsm fsm = builder.build();
+        State s2 = new State("s2")
+            .withOnEntry(() -> result.add("enter s2"))
+            .withOnExit(() -> result.add("exit s2"))
+            .withTransition("/s1", t2, s -> result.add("t2 triggered: " + s));
+
+        Fsm fsm = Fsm.create().withInitialState("/s1").withTopStates(s1, s2);
+
         fsm.activate();
 
         t1.onNext("a");
@@ -64,54 +57,45 @@ public class FsmTests {
         PublishSubject<String> t4 = PublishSubject.create();
         PublishSubject<String> t5 = PublishSubject.create();
 
-        State s1_1 = new StateBuilder()
+        State s1_1 = new State("s1_1")
                 .withOnEntry( () -> result.add("enter s1.1") )
                 .withOnExit(() -> result.add("exit s1.1"))
-                .build();
+                .withTransition("/s2/s2_2", t1, s -> result.add("t1 triggered: " + s));
 
-        State s1_2 = new StateBuilder()
-                .withOnEntry( () -> result.add("enter s1.2") )
+        State s1_2 = new State("s1_2")
+                .withOnEntry(() -> result.add("enter s1.2") )
                 .withOnExit(() -> result.add("exit s1.2"))
-                .withInternalTransition(t5,
-                                        s -> result.add("t5 triggered internal transition from s1_2: " + s),
-                                        s -> s.equals("i"))
-                .build();
+                .withInternalTransition(
+                        t5, s -> result.add("t5 triggered internal transition from s1_2: " + s), s -> s.equals("i"));
 
-        State s1 = new StateBuilder()
-                .withOnEntry( () -> result.add("enter s1") )
+        State s1 = new State("s1")
+                .withOnEntry(() -> result.add("enter s1") )
                 .withOnExit(() -> result.add("exit s1"))
+                .withInternalTransition(t4, s -> result.add("t4 triggered internal transition from s1: " + s))
+                .withInternalTransition(t5, s -> result.add("t5 triggered internal transition from s1: " + s))
                 .withInitialSubState(s1_1)
-                .withSubState(s1_2)
-                .withInternalTransition(t4, (s) -> result.add("t4 triggered internal transition from s1: " + s))
-                .withInternalTransition(t5, (s) -> result.add("t5 triggered internal transition from s1: " + s))
-                .build();
+                .withSubState(s1_2);
 
-        State s2_1 = new StateBuilder()
-                .withOnEntry( () -> result.add("enter s2.1") )
-                .withOnExit(() -> result.add("exit s2.1"))
-                .build();
-
-        State s2_2 = new StateBuilder()
-                .withOnEntry( () -> result.add("enter s2.2") )
-                .withOnExit(() -> result.add("exit s2.2"))
-                .build();
-
-        State s2 = new StateBuilder()
-                .withOnEntry( () -> result.add("enter s2") )
+        State s2 = new State("s2")
+                .withOnEntry(() -> result.add("enter s2") )
                 .withOnExit(() -> result.add("exit s2"))
-                .withInitialSubState(s2_1)
-                .withSubState(s2_2)
-                .build();
+                .withInitialSubState(
+                    new State("s2_1")
+                            .withOnEntry( () -> result.add("enter s2.1") )
+                            .withOnExit(() -> result.add("exit s2.1")))
+                .withSubState(
+                    new State("s2_2")
+                            .withOnEntry( () -> result.add("enter s2.2") )
+                            .withOnExit(() -> result.add("exit s2.2"))
+                            .withTransition("/s2/s2_1", t2, s -> result.add("t2 triggered: " + s), s -> s.equals("c"))
+                            .withTransition("/s1/s1_2", t3, s -> result.add("t3 triggered from s2.2: " + s)))
+                .withTransition("/s1", t3, s -> result.add("t3 triggered from s2: " + s));
 
-        FsmBuilder builder = new FsmBuilder()
-                .withInitialState(s1)
-                .withTopStates(s1, s2)
-                .withTransition(s1_1, s2_2, t1, s -> result.add("t1 triggered: " + s))
-                .withTransition(s2_2, s2_1, t2, s -> result.add("t2 triggered: " + s), s -> s.equals("c"))
-                .withTransition(s2, s1, t3, s -> result.add("t3 triggered from s2: " + s))
-                .withTransition(s2_2, s1_2, t3, s -> result.add("t3 triggered from s2.2: " + s));
 
-        Fsm fsm = builder.build();
+        Fsm fsm = Fsm.create()
+            .withInitialState("/s1")
+            .withTopStates(s1, s2);
+
         fsm.activate();
 
         // Should transition to s2_2
@@ -173,8 +157,8 @@ public class FsmTests {
 
     @Test(expected = IllegalArgumentException.class)
     public void topStatesAreRequired() {
-        State s = new StateBuilder().build();
-        new FsmBuilder().withInitialState(s).build();
+        State s = new State("s");
+        Fsm.create().withInitialState("s").activate();
     }
 
 }

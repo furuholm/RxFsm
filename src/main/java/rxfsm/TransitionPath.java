@@ -1,6 +1,5 @@
 package rxfsm;
 
-import rxfsm.State;
 import java.util.List;
 
 public class TransitionPath {
