@@ -18,17 +18,17 @@ public class FsmTests {
         PublishSubject<String> t1 = PublishSubject.create();
         PublishSubject<String> t2 = PublishSubject.create();
 
-        State s1 = new State("s1")
-            .withOnEntry(() -> result.add("enter s1"))
-            .withOnExit(() -> result.add("exit s1"))
-            .withTransition("/s2", t1, s -> result.add("t1 triggered: " + s));
-
-        State s2 = new State("s2")
-            .withOnEntry(() -> result.add("enter s2"))
-            .withOnExit(() -> result.add("exit s2"))
-            .withTransition("/s1", t2, s -> result.add("t2 triggered: " + s));
-
-        Fsm fsm = Fsm.create().withInitialState("/s1").withTopStates(s1, s2);
+        Fsm fsm = Fsm.create()
+                .withInitialState("/s1")
+                .withTopStates(
+                    new State("s1")
+                        .withOnEntry(() -> result.add("enter s1"))
+                        .withOnExit(() -> result.add("exit s1"))
+                        .withTransition("/s2", t1, s -> result.add("t1 triggered: " + s)),
+                    new State("s2")
+                        .withOnEntry(() -> result.add("enter s2"))
+                        .withOnExit(() -> result.add("exit s2"))
+                        .withTransition("/s1", t2, s -> result.add("t2 triggered: " + s)));
 
         fsm.activate();
 
