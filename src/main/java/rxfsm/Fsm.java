@@ -1,10 +1,10 @@
 package rxfsm;
 
-import java.util.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import rx.Observable;
 import rx.Subscription;
@@ -14,12 +14,12 @@ public class Fsm {
 
     private final String pathToInitialState;
 
-	private State initialState; // Lazy construction, hence not final
+    private State initialState; // Lazy construction, hence not final
     private Map<String, State> pathToStateMap; // Lazy construction, hence not final
     private Map<State, List<State>> stateAncestorMap; // Lazy construction, hence not final
     private CompositeSubscription transitionsSubscriptions; // Lazy construction, hence not final
     private final List<State> topStates;
-	private State currentState;
+    private State currentState;
 
     public static Fsm create() {
         return new Fsm(null, null);
@@ -84,8 +84,8 @@ public class Fsm {
         enter(actualTargetState);
     }
 
-	private void enter(State state) {
-		state.enter();
+    private void enter(State state) {
+        state.enter();
 
         State initialSubState = state.getInitialSubState();
         if (initialSubState != null)
@@ -99,7 +99,7 @@ public class Fsm {
             activateTransitions();
         }
 
-	}
+    }
 
     private void exit(State state) {
         state.exit();
@@ -117,15 +117,9 @@ public class Fsm {
         }
     }
 
-    // http://stackoverflow.com/questions/27870136/java-lambda-stream-distinct-on-arbitrary-key
-    private static <T> Predicate<T> distinctByKey(Function<? super T,Object> keyExtractor) {
-        Map<Object,Boolean> seen = new HashMap<>();
-        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
-    }
-
     private void activateTransitions() {
         List<Observable<String>> observableTransitions
-                = generateObservableTransitionList(currentState, stateAncestorMap.get(currentState), currentState.getTransitions());
+                = generateObservableTransitionList(currentState, stateAncestorMap.get(currentState));
 
         if (!observableTransitions.isEmpty()) {
             Subscription s = Observable
@@ -133,9 +127,8 @@ public class Fsm {
                     .subscribe(pathToNewState -> {
                         // pathToNewState is null for internal transitions (by convention).
                         if (pathToNewState != null) {
-                            switchState(pathToStateMap.get(pathToNewState));
-                        }
-                        else{
+                            Fsm.this.switchState(pathToStateMap.get(pathToNewState));
+                        } else {
                             // Do nothing, for internal transitions this subscription is only here to
                             // enable actions to be executed when the transition triggers
                         }
@@ -150,30 +143,28 @@ public class Fsm {
     }
 
     private static List<Observable<String>> generateObservableTransitionList(
-            State sourceState, List<State> ancestors, List<Transition> transitions) {
-        Stream<State> statesWhosTransitionsToActivate
-                = Stream.concat(Stream.of(sourceState), ancestors.stream());
+            State sourceState, List<State> ancestors) {
 
-        List<Transition> toActivate
-                = statesWhosTransitionsToActivate
-                    .flatMap(state -> state.getTransitions().stream())
-                    .collect(Collectors.toList());
+        final Map<Object, Boolean> seen = new HashMap<>();
 
-        if (toActivate != null && !toActivate.isEmpty()) {
-            List<Observable<String>> observableTransitions
-                    = toActivate
-                    .stream()
-                    // Filter out those observables who's event is already handled by another observable.
-                    // This is to handle "overriding" of event handling (ultimate hook pattern)
-                    .filter(distinctByKey(transition -> transition.event()))
-                    .map(transition -> transition.observable())
-                    .collect(Collectors.toList());
-
-            return observableTransitions;
-        }
-        else {
-            return new ArrayList<Observable<String>>();
-        }
+        return Observable.concat(Observable.just(sourceState), Observable.from(ancestors))
+                .map(State::getTransitions)
+                .flatMap(Observable::from)
+                // Filter out those observables whose event is already handled by another observable.
+                // This is to handle "overriding" of event handling (ultimate hook pattern)
+                // http://stackoverflow.com/questions/27870136/java-lambda-stream-distinct-on-arbitrary-key
+                .filter(transition -> {
+                    Object key = transition.event();
+                    if (seen.get(key) == null) {
+                        seen.put(key, Boolean.TRUE);
+                        return true;
+                    }
+                    return false;
+                })
+                .map(Transition::observable)
+                        .toList()
+                        .toBlocking()
+                        .first();
     }
 
     // Generates a map where each state in the FSM is mapped against a list of its ancestors

@@ -17,7 +17,7 @@ public class State {
     private final State initialSubState;
     private final List<Transition> transitions;
 
-    State(String name) {
+    public State(String name) {
         this.name = name;
         this.onEntry = null;
         this.onExit = null;
